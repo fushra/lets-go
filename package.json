@@ -4,7 +4,9 @@
   "description": "A CLI for creating javascript based web and nodejs applications",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc src/cli.ts --outDir dist/",
+    "app": "ts-node src/cli.ts"
   },
   "repository": {
     "type": "git",
@@ -15,5 +17,9 @@
   "bugs": {
     "url": "https://github.com/fushra/lets-go/issues"
   },
-  "homepage": "https://github.com/fushra/lets-go#readme"
+  "homepage": "https://github.com/fushra/lets-go#readme",
+  "devDependencies": {
+    "ts-node": "^10.3.0",
+    "typescript": "^4.4.4"
+  }
 }
