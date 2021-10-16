@@ -4,7 +4,7 @@
   "description": "A CLI for creating javascript based web and nodejs applications",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "build": "tsc src/cli.ts --outDir dist/",
     "app": "ts-node src/cli.ts"
   },
@@ -19,6 +19,10 @@
   },
   "homepage": "https://github.com/fushra/lets-go#readme",
   "devDependencies": {
+    "@types/jest": "^27.0.2",
+    "jest": "^27.2.5",
+    "kleur": "^4.1.4",
+    "ts-jest": "^27.0.6",
     "ts-node": "^10.3.0",
     "typescript": "^4.4.4"
   }
