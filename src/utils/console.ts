@@ -6,7 +6,7 @@ import { dim, yellow, red } from 'kleur/colors'
  * @param args What you want to log
  */
 export function info(...args: any[]): void {
-  console.info(...args.map((arg) => dim(arg)))
+  console.info(...args.map(dim))
 }
 
 /**
@@ -15,7 +15,7 @@ export function info(...args: any[]): void {
  * @param args What you want to log
  */
 export function warn(...args: any[]): void {
-  console.warn(...args.map((arg) => yellow(arg)))
+  console.warn(...args.map(yellow))
 }
 
 export function error(error: Error, shouldAskForReport: boolean = false) {
