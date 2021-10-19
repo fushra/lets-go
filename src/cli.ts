@@ -1,6 +1,8 @@
 import prompts, { PromptObject } from 'prompts'
+import { allPlugins } from './plugins'
+import { BasePlugin } from './plugins/base'
 import { allTemplates } from './templates'
-import { Category } from './templates/base'
+import { Category, TemplateBase } from './templates/base'
 ;(async () => {
   const { category } = await prompts({
     type: 'select',
@@ -30,4 +32,18 @@ import { Category } from './templates/base'
       .filter((template) => template.isInCategory(category))
       .map((template) => ({ title: template.name, value: template })),
   })
+
+  const { plugins } = await prompts({
+    type: 'multiselect',
+    name: 'plugins',
+    message: 'Chose plugins',
+    choices: allPlugins
+      .filter((plugin) => plugin.supportsTemplate(template))
+      .map((plugin) => ({ title: plugin.name, value: plugin })),
+  })
+
+  // Apply plugins to template
+  for (const plugin of plugins) {
+    await plugin.apply(template)
+  }
 })()

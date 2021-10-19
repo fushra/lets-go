@@ -4,10 +4,18 @@ import { ExpressApp } from './expressApp'
 import { ReactApp } from './react'
 import { SharedLibrary } from './sharedLibrary'
 
+export const templates = {
+  CLIApp: new CLIApp(),
+  ExpressApp: new ExpressApp(),
+  ReactApp: new ReactApp(),
+  SharedLibrary: new SharedLibrary(),
+}
+
 export const allTemplates: TemplateBase[] = [
-  new CLIApp(),
-  new ExpressApp(),
-  new ReactApp(),
-  new SharedLibrary(),
+  templates.CLIApp,
+  templates.ExpressApp,
+  templates.ReactApp,
+  templates.SharedLibrary,
 ]
-export default { CLIApp, ExpressApp, ReactApp, SharedLibrary }
+
+export default templates
