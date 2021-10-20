@@ -1,4 +1,4 @@
-import { Category, TemplateBase } from './base'
+import { Category, Group, TemplateBase } from './base'
 
 export class CLIApp extends TemplateBase {
   name = 'CLI App'

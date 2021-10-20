@@ -42,8 +42,8 @@ export function error(error: Error, shouldAskForReport: boolean = false) {
 /**
  * Only logs if the environment is not production. Doesn't apply any formatting
  */
-export function debug() {
+export function debug(...args: any[]) {
   if (process.env.NODE_ENV === 'development') {
-    console.debug(...arguments)
+    console.debug(...args)
   }
 }
