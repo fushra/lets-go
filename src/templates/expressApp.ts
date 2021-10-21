@@ -18,8 +18,8 @@ export class ExpressApp extends TemplateBase {
       'Setup NPM',
 
       new Command('Init npm', 'npm', 'init', '-y'),
-      new Command('Init npm', 'npm', 'install', 'express'),
-      new Command('Init npm', 'npm', 'install', '-D', 'node-dev')
+      new Command('Install express', 'npm', 'install', 'express'),
+      new Command('Install node-dev', 'npm', 'install', '-D', 'node-dev')
     ),
     new Group(
       'Create files',
@@ -33,6 +33,9 @@ export class ExpressApp extends TemplateBase {
 
         obj.scripts.prod = 'node ./src/index.js'
         obj.scripts.dev = 'node-dev ./src/index.js'
+
+        obj.main = 'src/index.js'
+        obj.private = false
 
         return obj
       })

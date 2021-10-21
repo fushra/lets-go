@@ -1,6 +1,6 @@
 import execa from 'execa'
 import { mkdirSync, readFileSync, writeFileSync } from 'fs'
-import Listr from 'listr'
+import Listr, { ListrTask, ListrTaskWrapper } from 'listr'
 import { dirname, isAbsolute, join } from 'path'
 import { activeDir } from '../cli'
 
@@ -13,7 +13,7 @@ export enum Category {
 export abstract class Step {
   abstract name: string
 
-  abstract apply(): void | Promise<void>
+  abstract apply(task: ListrTaskWrapper<any>): void | Promise<void>
 }
 
 export class Group extends Step {
@@ -27,9 +27,10 @@ export class Group extends Step {
     this.name = name
   }
 
-  async apply() {
+  async apply(task: ListrTaskWrapper<any>) {
     for (const step of this.steps) {
-      await step.apply()
+      task.output = `${step.name}...`
+      await step.apply(task)
     }
   }
 }
@@ -47,7 +48,7 @@ export class File extends Step {
     this.content = content
   }
 
-  apply() {
+  apply(task: ListrTaskWrapper<any>) {
     this.path = join(activeDir, this.path)
 
     const parent = dirname(this.path)
@@ -70,7 +71,7 @@ export class Command extends Step {
     this.args = args
   }
 
-  async apply() {
+  async apply(task: ListrTaskWrapper<any>) {
     await execa(this.command, this.args, { cwd: activeDir })
   }
 }
@@ -85,14 +86,14 @@ export class PackageMods extends Step {
     this.mergeFn = mergeFn
   }
 
-  apply() {
+  apply(task: ListrTaskWrapper<any>) {
     const packageJson = JSON.parse(
       readFileSync(join(activeDir, 'package.json'), 'utf8')
     )
     const newPackage = this.mergeFn(packageJson)
     writeFileSync(
-      JSON.stringify(newPackage, null, 2),
-      join(activeDir, 'package.json')
+      join(activeDir, 'package.json'),
+      JSON.stringify(newPackage, null, 2)
     )
   }
 }
@@ -110,12 +111,12 @@ export abstract class TemplateBase {
   prePlugins() {}
 
   async apply() {
-    const list = new Listr(
-      this.steps.map((step) => ({
-        title: step.name,
-        task: () => step.apply(),
-      }))
-    )
+    const steps = this.steps.map((step) => ({
+      title: step.name,
+      task: (_ctx: never, task: ListrTaskWrapper<any>) => step.apply(task),
+    }))
+
+    const list = new Listr(steps)
 
     await list.run().catch((err) => {
       console.error(err)
