@@ -3,12 +3,15 @@ import { mkdirSync, readFileSync, writeFileSync } from 'fs'
 import Listr, { ListrTask, ListrTaskWrapper } from 'listr'
 import { dirname, isAbsolute, join } from 'path'
 import { activeDir } from '../cli'
+import { BasePlugin } from '../plugins/base'
 
 export enum Category {
   WEB,
   NODE,
   LIBRARY,
 }
+
+export const staticFolder = join(__dirname, 'static')
 
 export abstract class Step {
   abstract name: string
@@ -32,6 +35,21 @@ export class Group extends Step {
       task.output = `${step.name}...`
       await step.apply(task)
     }
+  }
+
+  updateSteps(steps: Step[]): Group {
+    this.steps = steps
+    return this
+  }
+}
+
+/**
+ * You should put all of your file creation in this to make it easier for plugins
+ * to hook into the process.
+ */
+export class CreateFiles extends Group {
+  constructor(...steps: Step[]) {
+    super('Create files', ...steps)
   }
 }
 
@@ -76,6 +94,32 @@ export class Command extends Step {
   }
 }
 
+export class NPMInstall extends Command {
+  deps: string[]
+  dev: boolean
+
+  constructor(dev: boolean, ...deps: string[]) {
+    super('Installing dependencies', 'npm', 'install')
+
+    this.dev = dev
+    this.deps = deps
+  }
+
+  async apply(task: ListrTaskWrapper<any>) {
+    // Skip if there are no dependencies
+    if (this.deps.length === 0) return
+
+    this.args = [...this.args, ...this.deps, this.dev ? '--save-dev' : '--save']
+
+    await super.apply(task)
+  }
+
+  updateDeps(deps: string[]): NPMInstall {
+    this.deps = deps
+    return this
+  }
+}
+
 export class PackageMods extends Step {
   name = 'Modify package.json'
   mergeFn: (obj: any) => any
@@ -110,13 +154,29 @@ export abstract class TemplateBase {
 
   prePlugins() {}
 
-  async apply() {
+  async apply(plugins: BasePlugin<TemplateBase>[]) {
     const steps = this.steps.map((step) => ({
       title: step.name,
       task: (_ctx: never, task: ListrTaskWrapper<any>) => step.apply(task),
     }))
 
-    const list = new Listr(steps)
+    const list = new Listr([
+      {
+        title: 'Pre-plugins',
+        task: async (_ctx: never, task: ListrTaskWrapper<any>) =>
+          this.prePlugins(),
+      },
+      {
+        title: 'Apply plugins',
+        task: async (_ctx: never, task: ListrTaskWrapper<any>) => {
+          for (const plugin of plugins) {
+            task.output = `${plugin.name}...`
+            await plugin.apply(this)
+          }
+        },
+      },
+      ...steps,
+    ])
 
     await list.run().catch((err) => {
       console.error(err)

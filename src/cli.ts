@@ -1,9 +1,11 @@
 import { Command } from 'commander'
+import { mkdirSync } from 'fs'
 import { isAbsolute, join } from 'path'
 import prompts from 'prompts'
 import { allPlugins } from './plugins'
+import { BasePlugin } from './plugins/base'
 import templates, { allTemplates } from './templates'
-import { Category } from './templates/base'
+import { Category, TemplateBase } from './templates/base'
 
 const packageJSON = require('../package.json')
 
@@ -29,6 +31,7 @@ program
     }
 
     console.log(`Creating new project in ${activeDir}`)
+    mkdirSync(activeDir, { recursive: true })
 
     const { category } = await prompts({
       type: 'select',
@@ -53,7 +56,7 @@ program
 
     if (typeof category === 'undefined') process.exit(0)
 
-    const { template } = await prompts({
+    const { template } = (await prompts({
       type: 'select',
       name: 'template',
       message: 'Chose a base template',
@@ -61,29 +64,22 @@ program
       choices: allTemplates
         .filter((template) => template.isInCategory(category))
         .map((template) => ({ title: template.name, value: template })),
-    }).catch(() => process.exit(0))
+    }).catch(() => process.exit(0))) as { template: TemplateBase }
 
     if (typeof template === 'undefined') process.exit(0)
 
-    const { plugins } = await prompts({
+    const { plugins } = (await prompts({
       type: 'multiselect',
       name: 'plugins',
       message: 'Chose plugins',
       choices: allPlugins
         .filter((plugin) => plugin.supportsTemplate(template))
         .map((plugin) => ({ title: plugin.name, value: plugin })),
-    }).catch(() => process.exit(0))
+    }).catch(() => process.exit(0))) as { plugins: BasePlugin<TemplateBase>[] }
 
     if (typeof plugins === 'undefined') process.exit(0)
 
-    template.prePlugins()
-
-    // Apply plugins to template
-    for (const plugin of plugins) {
-      await plugin.apply(template)
-    }
-
-    template.apply()
+    template.apply(plugins)
   })
 
 program.parse(process.argv)

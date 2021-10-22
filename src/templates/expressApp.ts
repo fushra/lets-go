@@ -3,8 +3,10 @@ import { join } from 'path'
 import {
   Category,
   Command,
+  CreateFiles,
   File,
   Group,
+  NPMInstall,
   PackageMods,
   TemplateBase,
 } from './base'
@@ -18,12 +20,10 @@ export class ExpressApp extends TemplateBase {
       'Setup NPM',
 
       new Command('Init npm', 'npm', 'init', '-y'),
-      new Command('Install express', 'npm', 'install', 'express'),
-      new Command('Install node-dev', 'npm', 'install', '-D', 'node-dev')
+      new NPMInstall(false, 'express'),
+      new NPMInstall(true, 'node-dev')
     ),
-    new Group(
-      'Create files',
-
+    new CreateFiles(
       new File(
         'src/index.js',
         readFileSync(join(__dirname, 'static', 'express-src-index.js'), 'utf8')

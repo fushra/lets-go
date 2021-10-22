@@ -1,23 +1,108 @@
+import { existsSync } from 'fs'
+import fetch from 'node-fetch'
+
 import templates from '../templates'
+import {
+  CreateFiles,
+  Group,
+  File,
+  Command,
+  PackageMods,
+  NPMInstall,
+} from '../templates/base'
 import { CLIApp } from '../templates/cliApp'
 import { ExpressApp } from '../templates/expressApp'
 import { ReactApp } from '../templates/react'
 import { SharedLibrary } from '../templates/sharedLibrary'
 
 import { BasePlugin } from './base'
+import { flattenSteps, mapAllSteps, removeFromSteps } from './common'
 
 type Base = CLIApp | ExpressApp | SharedLibrary
 
 export class TypescriptBasePlugin extends BasePlugin<Base> {
   name = 'Typescript'
   protected supports = [
-    templates.CLIApp,
+    // templates.CLIApp,
     templates.ExpressApp,
-    templates.SharedLibrary,
+    // templates.SharedLibrary,
   ]
 
-  apply(template: Base) {
-    throw new Error('Method not implemented.')
+  async apply(template: Base) {
+    const filesIndex = template.steps.findIndex(
+      (step) => step.name == 'Create files'
+    )
+
+    // Convert all the files into typescript files
+    if (
+      template.steps[filesIndex] instanceof CreateFiles ||
+      template.steps[filesIndex] instanceof Group
+    ) {
+      ;(template.steps[filesIndex] as Group).steps = (
+        template.steps[filesIndex] as Group
+      ).steps.map((step) => {
+        // We do not want to process it if it is not a file
+        if (!(step instanceof File)) return step
+
+        // We do not want to process it if it is not a js file
+        if (!step.path.includes('.js')) return step
+
+        if (existsSync(step.path.replace('.js', '.ts'))) {
+          step.path = step.path.replace('.js', '.ts')
+        }
+
+        return step
+      })
+    } else {
+      throw new Error('Create files step not found')
+    }
+
+    // Remove node-dev from install list
+    template.steps = mapAllSteps(template.steps, (step) =>
+      step instanceof NPMInstall
+        ? step.updateDeps(step.deps.filter((dep) => dep != 'node-dev'))
+        : step
+    )
+
+    // Check for dependencies that need types
+    const potentiallyNeedsTypes = (
+      flattenSteps(template.steps).filter(
+        (step) => step instanceof NPMInstall
+      ) as NPMInstall[]
+    )
+      .map((step) => step.deps)
+      .flat()
+
+    let toInstall = []
+
+    for (const dep of potentiallyNeedsTypes) {
+      const res = await fetch(`https://www.npmjs.com/package/@types/${dep}`)
+      if (res.status == 200) {
+        toInstall.push(`@types/${dep}`)
+      }
+    }
+
+    // Add a step that will generate the tsconfig.json file
+    template.steps.push(
+      new Group(
+        'Setup typescript',
+
+        new NPMInstall(true, 'typescript', 'ts-node-dev'),
+        new NPMInstall(true, '@types/node', ...toInstall),
+        new Command('Create tsconfig', 'npx', 'tsc', '--init'),
+        new PackageMods((obj) => {
+          if (!obj.scripts) obj.scripts = {}
+
+          obj.scripts.build = 'tsc ./src/index.ts'
+          obj.scripts.prod = 'node ./dist/index.js'
+          obj.scripts.dev = 'ts-node-dev ./src/index.js'
+
+          obj.main = obj.main.replace('.js', '.ts')
+
+          return obj
+        })
+      )
+    )
   }
 }
 
