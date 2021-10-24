@@ -2,7 +2,8 @@ import { Command } from 'commander'
 import { mkdirSync } from 'fs'
 import { isAbsolute, join } from 'path'
 import prompts from 'prompts'
-import { allPlugins } from './plugins'
+
+import { allPlugins, plugins } from './plugins'
 import { BasePlugin } from './plugins/base'
 import templates, { allTemplates } from './templates'
 import { Category, TemplateBase } from './templates/base'
@@ -16,7 +17,11 @@ console.log(`test`)
 // Use injected values in development
 if (process.env.NODE_ENV === 'development') {
   console.log('Using injected values')
-  prompts.inject([Category.NODE, templates.ExpressApp, []])
+  prompts.inject([
+    Category.NODE,
+    templates.ExpressApp,
+    [plugins.TypescriptBasePlugin],
+  ])
 }
 
 const program = new Command()

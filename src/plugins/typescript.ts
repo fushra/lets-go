@@ -45,10 +45,14 @@ export class TypescriptBasePlugin extends BasePlugin<Base> {
         if (!(step instanceof File)) return step
 
         // We do not want to process it if it is not a js file
-        if (!step.path.includes('.js')) return step
+        if (!step.destination.includes('.js')) return step
 
-        if (existsSync(step.path.replace('.js', '.ts'))) {
-          step.path = step.path.replace('.js', '.ts')
+        const newStep = step.clone()
+        newStep.source = newStep.source.replace('.js', '.ts')
+        newStep.destination = newStep.destination.replace('.js', '.ts')
+
+        if (existsSync(newStep.resolveSource())) {
+          return newStep
         }
 
         return step

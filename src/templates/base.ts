@@ -17,6 +17,8 @@ export abstract class Step {
   abstract name: string
 
   abstract apply(task: ListrTaskWrapper<any>): void | Promise<void>
+
+  abstract clone(): Step
 }
 
 export class Group extends Step {
@@ -41,6 +43,10 @@ export class Group extends Step {
     this.steps = steps
     return this
   }
+
+  clone(): Group {
+    return new Group(this.name, ...this.steps.map((step) => step.clone()))
+  }
 }
 
 /**
@@ -54,25 +60,38 @@ export class CreateFiles extends Group {
 }
 
 export class File extends Step {
-  name = 'Creating'
+  name = 'Creating file'
 
-  path: string
-  content: string
+  destination: string
+  source: string
 
-  constructor(path: string, content: string) {
+  constructor(source: string, destination: string) {
     super()
 
-    this.path = path
-    this.content = content
+    this.source = source
+    this.destination = destination
   }
 
   apply(task: ListrTaskWrapper<any>) {
-    this.path = join(activeDir, this.path)
+    const source = this.resolveSource()
+    const destination = this.resolveDestination()
 
-    const parent = dirname(this.path)
+    const parent = dirname(destination)
     mkdirSync(parent, { recursive: true })
 
-    writeFileSync(this.path, this.content)
+    writeFileSync(destination, readFileSync(source, 'utf8'))
+  }
+
+  clone(): File {
+    return new File(this.source, this.destination)
+  }
+
+  resolveDestination(): string {
+    return join(activeDir, this.destination)
+  }
+
+  resolveSource(): string {
+    return join(staticFolder, this.source)
   }
 }
 
@@ -91,6 +110,10 @@ export class Command extends Step {
 
   async apply(task: ListrTaskWrapper<any>) {
     await execa(this.command, this.args, { cwd: activeDir })
+  }
+
+  clone(): Command {
+    return new Command(this.name, this.command, ...this.args)
   }
 }
 
@@ -118,6 +141,10 @@ export class NPMInstall extends Command {
     this.deps = deps
     return this
   }
+
+  clone(): NPMInstall {
+    return new NPMInstall(this.dev, ...this.deps)
+  }
 }
 
 export class PackageMods extends Step {
@@ -140,6 +167,10 @@ export class PackageMods extends Step {
       JSON.stringify(newPackage, null, 2)
     )
   }
+
+  clone(): PackageMods {
+    return new PackageMods(this.mergeFn)
+  }
 }
 
 export abstract class TemplateBase {
@@ -155,11 +186,6 @@ export abstract class TemplateBase {
   prePlugins() {}
 
   async apply(plugins: BasePlugin<TemplateBase>[]) {
-    const steps = this.steps.map((step) => ({
-      title: step.name,
-      task: (_ctx: never, task: ListrTaskWrapper<any>) => step.apply(task),
-    }))
-
     const list = new Listr([
       {
         title: 'Pre-plugins',
@@ -175,7 +201,17 @@ export abstract class TemplateBase {
           }
         },
       },
-      ...steps,
+      {
+        title: 'Build projects',
+        task: () =>
+          new Listr(
+            this.steps.map((step) => ({
+              title: step.name,
+              task: (_ctx: never, task: ListrTaskWrapper<any>) =>
+                step.apply(task),
+            }))
+          ),
+      },
     ])
 
     await list.run().catch((err) => {

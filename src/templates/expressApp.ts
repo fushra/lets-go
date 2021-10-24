@@ -24,10 +24,7 @@ export class ExpressApp extends TemplateBase {
       new NPMInstall(true, 'node-dev')
     ),
     new CreateFiles(
-      new File(
-        'src/index.js',
-        readFileSync(join(__dirname, 'static', 'express-src-index.js'), 'utf8')
-      ),
+      new File('express-src-index.js', 'src/index.js'),
       new PackageMods((obj) => {
         if (!obj.scripts) obj.scripts = {}
 
