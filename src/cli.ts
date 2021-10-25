@@ -7,21 +7,16 @@ import { allPlugins, plugins } from './plugins'
 import { BasePlugin } from './plugins/base'
 import templates, { allTemplates } from './templates'
 import { Category, TemplateBase } from './templates/base'
+import { info } from './utils/console'
 
 const packageJSON = require('../package.json')
 
 export let activeDir: string
 
-console.log(`test`)
-
 // Use injected values in development
 if (process.env.NODE_ENV === 'development') {
   console.log('Using injected values')
-  prompts.inject([
-    Category.NODE,
-    templates.ExpressApp,
-    [plugins.TypescriptBasePlugin],
-  ])
+  prompts.inject([Category.NODE, templates.CLIApp, []])
 }
 
 const program = new Command()
@@ -35,8 +30,7 @@ program
       activeDir = directory
     }
 
-    console.log(`Creating new project in ${activeDir}`)
-    mkdirSync(activeDir, { recursive: true })
+    info(`Creating new project in ${activeDir}`)
 
     const { category } = await prompts({
       type: 'select',
@@ -73,18 +67,28 @@ program
 
     if (typeof template === 'undefined') process.exit(0)
 
-    const { plugins } = (await prompts({
-      type: 'multiselect',
-      name: 'plugins',
-      message: 'Chose plugins',
-      choices: allPlugins
-        .filter((plugin) => plugin.supportsTemplate(template))
-        .map((plugin) => ({ title: plugin.name, value: plugin })),
-    }).catch(() => process.exit(0))) as { plugins: BasePlugin<TemplateBase>[] }
+    let plugins: BasePlugin<TemplateBase>[] = []
 
-    if (typeof plugins === 'undefined') process.exit(0)
+    const availablePlugins = allPlugins
+      .filter((plugin) => plugin.supportsTemplate(template))
+      .map((plugin) => ({ title: plugin.name, value: plugin }))
 
-    template.apply(plugins)
+    if (availablePlugins.length !== 0) {
+      const userInput = (await prompts({
+        type: 'multiselect',
+        name: 'plugins',
+        message: 'Chose plugins',
+        choices: availablePlugins,
+      }).catch(() => process.exit(0))) as {
+        plugins: BasePlugin<TemplateBase>[]
+      }
+
+      plugins = userInput.plugins
+    }
+
+    mkdirSync(activeDir, { recursive: true })
+
+    await template.apply(plugins || [])
   })
 
 program.parse(process.argv)

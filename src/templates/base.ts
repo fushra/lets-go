@@ -1,7 +1,8 @@
 import execa from 'execa'
 import { mkdirSync, readFileSync, writeFileSync } from 'fs'
-import Listr, { ListrTask, ListrTaskWrapper } from 'listr'
-import { dirname, isAbsolute, join } from 'path'
+import Listr, { ListrTaskWrapper } from 'listr'
+import { dirname, join } from 'path'
+
 import { activeDir } from '../cli'
 import { BasePlugin } from '../plugins/base'
 
@@ -202,7 +203,7 @@ export abstract class TemplateBase {
         },
       },
       {
-        title: 'Build projects',
+        title: 'Build project',
         task: () =>
           new Listr(
             this.steps.map((step) => ({
