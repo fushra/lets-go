@@ -13,12 +13,12 @@ import {
 import { CLIApp } from '../templates/cliApp'
 import { ExpressApp } from '../templates/expressApp'
 import { ReactApp } from '../templates/react'
-import { SharedLibrary } from '../templates/sharedLibrary'
+import { SharedCommonJSLibrary } from '../templates/sharedLibrary'
 
 import { BasePlugin } from './base'
 import { flattenSteps, mapAllSteps, removeFromSteps } from './common'
 
-type Base = CLIApp | ExpressApp | SharedLibrary
+type Base = CLIApp | ExpressApp | SharedCommonJSLibrary
 
 export class TypescriptBasePlugin extends BasePlugin<Base> {
   name = 'Typescript'

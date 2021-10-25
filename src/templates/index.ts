@@ -2,20 +2,22 @@ import { TemplateBase } from './base'
 import { CLIApp } from './cliApp'
 import { ExpressApp } from './expressApp'
 import { ReactApp } from './react'
-import { SharedLibrary } from './sharedLibrary'
+import { SharedCommonJSLibrary, SharedESMLibrary } from './sharedLibrary'
 
 export const templates = {
   CLIApp: new CLIApp(),
   ExpressApp: new ExpressApp(),
   ReactApp: new ReactApp(),
-  SharedLibrary: new SharedLibrary(),
+  SharedCommonJSLibrary: new SharedCommonJSLibrary(),
+  SharedESMLibrary: new SharedESMLibrary(),
 }
 
 export const allTemplates: TemplateBase[] = [
   templates.CLIApp,
   templates.ExpressApp,
   templates.ReactApp,
-  templates.SharedLibrary,
+  templates.SharedCommonJSLibrary,
+  templates.SharedESMLibrary,
 ]
 
 export default templates

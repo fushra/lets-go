@@ -1,26 +1,19 @@
 import {
   File,
   Category,
-  Command,
   CreateFiles,
-  Group,
-  NPMInstall,
   TemplateBase,
   PackageMods,
+  Step,
+  SetupNPM,
 } from './base'
 
 export class CLIApp extends TemplateBase {
   name = 'CLI App'
   protected category = [Category.NODE]
 
-  steps = [
-    new Group(
-      'Setup NPM',
-
-      new Command('Init npm', 'npm', 'init', '-y'),
-      new NPMInstall(false, 'commander'),
-      new NPMInstall(true, 'node-dev')
-    ),
+  steps: Step[] = [
+    new SetupNPM(['commander'], ['node-dev']),
     new CreateFiles(
       new File('cli/src/index.js', 'src/index.js'),
       new PackageMods((obj) => {

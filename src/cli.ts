@@ -3,7 +3,7 @@ import { mkdirSync } from 'fs'
 import { isAbsolute, join } from 'path'
 import prompts from 'prompts'
 
-import { allPlugins, plugins } from './plugins'
+import { allPlugins } from './plugins'
 import { BasePlugin } from './plugins/base'
 import templates, { allTemplates } from './templates'
 import { Category, TemplateBase } from './templates/base'

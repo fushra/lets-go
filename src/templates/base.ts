@@ -148,6 +148,17 @@ export class NPMInstall extends Command {
   }
 }
 
+export class SetupNPM extends Group {
+  constructor(fullDeps: string[], devDeps: string[]) {
+    super(
+      'Setup NPM',
+      new Command('Init npm', 'npm', 'init', '-y'),
+      new NPMInstall(false, ...fullDeps),
+      new NPMInstall(true, ...devDeps)
+    )
+  }
+}
+
 export class PackageMods extends Step {
   name = 'Modify package.json'
   mergeFn: (obj: any) => any
@@ -179,6 +190,7 @@ export abstract class TemplateBase {
   protected abstract category: Category[]
 
   steps: Step[] = []
+  requiredPlugins: BasePlugin<TemplateBase>[] = []
 
   public isInCategory(category: Category) {
     return this.category.includes(category)
@@ -186,7 +198,9 @@ export abstract class TemplateBase {
 
   prePlugins() {}
 
-  async apply(plugins: BasePlugin<TemplateBase>[]) {
+  async apply(userPlugins: BasePlugin<TemplateBase>[]) {
+    const plugins = [...this.requiredPlugins, ...userPlugins]
+
     const list = new Listr([
       {
         title: 'Pre-plugins',
