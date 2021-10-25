@@ -24,7 +24,7 @@ export class ExpressApp extends TemplateBase {
       new NPMInstall(true, 'node-dev')
     ),
     new CreateFiles(
-      new File('express-src-index.js', 'src/index.js'),
+      new File('express/src/index.js', 'src/index.js'),
       new PackageMods((obj) => {
         if (!obj.scripts) obj.scripts = {}
 
@@ -32,7 +32,7 @@ export class ExpressApp extends TemplateBase {
         obj.scripts.dev = 'node-dev ./src/index.js'
 
         obj.main = 'src/index.js'
-        obj.private = false
+        obj.private = true
 
         return obj
       })
