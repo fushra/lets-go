@@ -17,7 +17,7 @@ import { ReactApp } from '../templates/react'
 import { SharedCommonJSLibrary } from '../templates/sharedLibrary'
 
 import { BasePlugin } from './base'
-import { flattenSteps, mapAllSteps } from './common'
+import { flattenSteps, mapAllSteps, React } from './common'
 
 type Base = CLIApp | ExpressApp | SharedCommonJSLibrary
 
@@ -118,8 +118,6 @@ export class TypescriptBasePlugin extends BasePlugin<Base> {
     )
   }
 }
-
-type React = ReactApp
 
 export class TypescriptReactPlugin extends BasePlugin<React> {
   name = 'Typescript (React)'

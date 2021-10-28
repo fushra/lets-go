@@ -7,6 +7,8 @@ export abstract class BasePlugin<T extends TemplateBase> {
    */
   priority = 0
 
+  dependencies: BasePlugin<T>[] = []
+
   protected abstract supports: T[]
 
   supportsTemplate(template: TemplateBase): boolean {

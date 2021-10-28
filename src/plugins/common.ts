@@ -1,4 +1,8 @@
 import { Group, Step } from '../templates/base'
+import { ReactApp } from '../templates/react'
+
+// Types
+export type React = ReactApp
 
 export const removeFromSteps = (
   steps: Step[],

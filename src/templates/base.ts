@@ -1,5 +1,5 @@
 import execa from 'execa'
-import { mkdirSync, readFileSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import Listr, { ListrTaskWrapper } from 'listr'
 import { dirname, join } from 'path'
 
@@ -47,6 +47,29 @@ export class Group extends Step {
 
   clone(): Group {
     return new Group(this.name, ...this.steps.map((step) => step.clone()))
+  }
+}
+
+export class IfExists extends Group {
+  path: string
+
+  constructor(path: string, name: string, ...steps: Step[]) {
+    super(name, ...steps)
+    this.path = path
+  }
+
+  async apply(task: ListrTaskWrapper<any>) {
+    if (existsSync(this.path)) {
+      await super.apply(task)
+    }
+  }
+
+  clone(): IfExists {
+    return new IfExists(
+      this.path,
+      this.name,
+      ...this.steps.map((step) => step.clone())
+    )
   }
 }
 
@@ -164,6 +187,31 @@ export class SetupNPM extends Group {
   }
 }
 
+export class FileMod extends Step {
+  name: string
+  path: string
+  mergeFn: (obj: string) => string
+
+  constructor(name: string, path: string, mergeFn: (obj: string) => string) {
+    super()
+
+    this.mergeFn = mergeFn
+    this.name = name
+    this.path = path
+  }
+
+  apply(task: ListrTaskWrapper<any>) {
+    const file = readFileSync(join(activeDir, this.path), 'utf8')
+    const newFile = this.mergeFn(file)
+
+    writeFileSync(join(activeDir, this.path), newFile)
+  }
+
+  clone(): FileMod {
+    return new FileMod(this.name, this.path, this.mergeFn)
+  }
+}
+
 export class JSONMod extends Step {
   name: string
   path: string
@@ -230,10 +278,7 @@ export abstract class TemplateBase {
       {
         title: 'Apply plugins',
         task: async (_ctx: never, task: ListrTaskWrapper<any>) => {
-          for (const plugin of plugins) {
-            task.output = `${plugin.name}...`
-            await plugin.apply(this)
-          }
+          await applyPlugins(plugins, task, this)
         },
       },
       {
@@ -253,5 +298,24 @@ export abstract class TemplateBase {
       console.error(err)
       process.exit(1)
     })
+  }
+}
+
+const appliedPlugins: string[] = []
+
+async function applyPlugins(
+  plugins: BasePlugin<TemplateBase>[],
+  task: Listr.ListrTaskWrapper<any>,
+  parent: TemplateBase
+) {
+  for (const plugin of plugins
+    .filter((p) => !appliedPlugins.includes(p.name))
+    .sort((a, b) => a.priority - b.priority)) {
+    await applyPlugins(plugin.dependencies, task, parent)
+
+    task.output = `${plugin.name}...`
+    await plugin.apply(parent)
+
+    appliedPlugins.push(plugin.name)
   }
 }
