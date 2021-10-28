@@ -9,6 +9,7 @@ import {
   Command,
   PackageMods,
   NPMInstall,
+  JSONMod,
 } from '../templates/base'
 import { CLIApp } from '../templates/cliApp'
 import { ExpressApp } from '../templates/expressApp'
@@ -16,7 +17,7 @@ import { ReactApp } from '../templates/react'
 import { SharedCommonJSLibrary } from '../templates/sharedLibrary'
 
 import { BasePlugin } from './base'
-import { flattenSteps, mapAllSteps, removeFromSteps } from './common'
+import { flattenSteps, mapAllSteps } from './common'
 
 type Base = CLIApp | ExpressApp | SharedCommonJSLibrary
 
@@ -24,9 +25,9 @@ export class TypescriptBasePlugin extends BasePlugin<Base> {
   name = 'Typescript'
   priority = 10
   protected supports = [
-    // templates.CLIApp,
+    templates.CLIApp,
     templates.ExpressApp,
-    // templates.SharedLibrary,
+    templates.SharedCommonJSLibrary,
   ]
 
   async apply(template: Base) {
@@ -102,9 +103,16 @@ export class TypescriptBasePlugin extends BasePlugin<Base> {
           obj.scripts.prod = 'node ./dist/index.js'
           obj.scripts.dev = 'ts-node-dev ./src/index.js'
 
-          obj.main = obj.main.replace('.js', '.ts')
+          obj.main = obj.main.replace('.js', '.ts').replace()
 
           return obj
+        }),
+        new JSONMod('Apply tsconfig changes', 'tsconfig.json', (conf) => {
+          conf.outDir = './dist'
+          conf.sourceMap = true
+          conf.target = 'es6'
+
+          return conf
         })
       )
     )

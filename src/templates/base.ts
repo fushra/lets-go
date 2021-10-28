@@ -164,25 +164,38 @@ export class SetupNPM extends Group {
   }
 }
 
-export class PackageMods extends Step {
-  name = 'Modify package.json'
+export class JSONMod extends Step {
+  name: string
+  path: string
   mergeFn: (obj: any) => any
 
-  constructor(mergeFn: (obj: any) => any) {
+  constructor(name: string, path: string, mergeFn: (obj: any) => any) {
     super()
 
     this.mergeFn = mergeFn
+    this.name = name
+    this.path = path
   }
 
   apply(task: ListrTaskWrapper<any>) {
     const packageJson = JSON.parse(
-      readFileSync(join(activeDir, 'package.json'), 'utf8')
+      readFileSync(join(activeDir, this.path), 'utf8')
     )
     const newPackage = this.mergeFn(packageJson)
     writeFileSync(
-      join(activeDir, 'package.json'),
+      join(activeDir, this.path),
       JSON.stringify(newPackage, null, 2)
     )
+  }
+
+  clone(): JSONMod {
+    return new JSONMod(this.name, this.path, this.mergeFn)
+  }
+}
+
+export class PackageMods extends JSONMod {
+  constructor(mergeFn: (obj: any) => any) {
+    super('Modify package.json', 'package.json', mergeFn)
   }
 
   clone(): PackageMods {
