@@ -36,32 +36,7 @@ export class TypescriptBasePlugin extends BasePlugin<Base> {
     )
 
     // Convert all the files into typescript files
-    if (
-      template.steps[filesIndex] instanceof CreateFiles ||
-      template.steps[filesIndex] instanceof Group
-    ) {
-      ;(template.steps[filesIndex] as Group).steps = (
-        template.steps[filesIndex] as Group
-      ).steps.map((step) => {
-        // We do not want to process it if it is not a file
-        if (!(step instanceof File)) return step
-
-        // We do not want to process it if it is not a js file
-        if (!step.destination.includes('.js')) return step
-
-        const newStep = step.clone()
-        newStep.source = newStep.source.replace('.js', '.ts')
-        newStep.destination = newStep.destination.replace('.js', '.ts')
-
-        if (existsSync(newStep.resolveSource())) {
-          return newStep
-        }
-
-        return step
-      })
-    } else {
-      throw new Error('Create files step not found')
-    }
+    this.convertFilesToTs(template, filesIndex)
 
     // Remove node-dev from install list
     template.steps = mapAllSteps(template.steps, (step) =>
@@ -71,24 +46,13 @@ export class TypescriptBasePlugin extends BasePlugin<Base> {
     )
 
     // Check for dependencies that need types
-    const potentiallyNeedsTypes = (
-      flattenSteps(template.steps).filter(
-        (step) => step instanceof NPMInstall
-      ) as NPMInstall[]
-    )
-      .map((step) => step.deps)
-      .flat()
-
-    let toInstall = []
-
-    for (const dep of potentiallyNeedsTypes) {
-      const res = await fetch(`https://www.npmjs.com/package/@types/${dep}`)
-      if (res.status == 200) {
-        toInstall.push(`@types/${dep}`)
-      }
-    }
+    let toInstall = await this.getTypes(template)
 
     // Add a step that will generate the tsconfig.json file
+    this.addSteps(template, toInstall)
+  }
+
+  private addSteps(template: Base, toInstall: string[]) {
     template.steps.push(
       new Group(
         'Setup typescript',
@@ -116,6 +80,55 @@ export class TypescriptBasePlugin extends BasePlugin<Base> {
         })
       )
     )
+  }
+
+  private async getTypes(template: Base) {
+    const potentiallyNeedsTypes = (
+      flattenSteps(template.steps).filter(
+        (step) => step instanceof NPMInstall
+      ) as NPMInstall[]
+    )
+      .map((step) => step.deps)
+      .flat()
+
+    let toInstall = []
+
+    for (const dep of potentiallyNeedsTypes) {
+      const res = await fetch(`https://www.npmjs.com/package/@types/${dep}`)
+      if (res.status == 200) {
+        toInstall.push(`@types/${dep}`)
+      }
+    }
+    return toInstall
+  }
+
+  private convertFilesToTs(template: Base, filesIndex: number) {
+    if (
+      template.steps[filesIndex] instanceof CreateFiles ||
+      template.steps[filesIndex] instanceof Group
+    ) {
+      ;(template.steps[filesIndex] as Group).steps = (
+        template.steps[filesIndex] as Group
+      ).steps.map((step) => {
+        // We do not want to process it if it is not a file
+        if (!(step instanceof File)) return step
+
+        // We do not want to process it if it is not a js file
+        if (!step.destination.includes('.js')) return step
+
+        const newStep = step.clone()
+        newStep.source = newStep.source.replace('.js', '.ts')
+        newStep.destination = newStep.destination.replace('.js', '.ts')
+
+        if (existsSync(newStep.resolveSource())) {
+          return newStep
+        }
+
+        return step
+      })
+    } else {
+      throw new Error('Create files step not found')
+    }
   }
 }
 
