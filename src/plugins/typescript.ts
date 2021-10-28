@@ -22,6 +22,7 @@ type Base = CLIApp | ExpressApp | SharedCommonJSLibrary
 
 export class TypescriptBasePlugin extends BasePlugin<Base> {
   name = 'Typescript'
+  priority = 10
   protected supports = [
     // templates.CLIApp,
     templates.ExpressApp,
@@ -114,9 +115,15 @@ type React = ReactApp
 
 export class TypescriptReactPlugin extends BasePlugin<React> {
   name = 'Typescript (React)'
+  priority = 10
+
   protected supports = [templates.ReactApp]
 
   apply(template: React) {
-    throw new Error('Method not implemented.')
+    template.steps = mapAllSteps(template.steps, (step) =>
+      step.name == 'Create react app' && step instanceof Command
+        ? step.appendArgs('--template', 'typescript')
+        : step
+    )
   }
 }

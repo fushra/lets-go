@@ -116,6 +116,11 @@ export class Command extends Step {
   clone(): Command {
     return new Command(this.name, this.command, ...this.args)
   }
+
+  appendArgs(...args: string[]): Command {
+    this.args = [...this.args, ...args]
+    return this
+  }
 }
 
 export class NPMInstall extends Command {
@@ -199,7 +204,9 @@ export abstract class TemplateBase {
   prePlugins() {}
 
   async apply(userPlugins: BasePlugin<TemplateBase>[]) {
-    const plugins = [...this.requiredPlugins, ...userPlugins]
+    const plugins = [...this.requiredPlugins, ...userPlugins].sort(
+      (a, b) => a.priority - b.priority
+    )
 
     const list = new Listr([
       {
