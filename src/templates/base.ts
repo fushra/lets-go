@@ -119,6 +119,37 @@ export class File extends Step {
   }
 }
 
+export class StringFiles extends Step {
+  name = 'Create file'
+
+  destination: string
+  content: string
+
+  constructor(destination: string, content: string) {
+    super()
+
+    this.content = content
+    this.destination = destination
+  }
+
+  apply(task: ListrTaskWrapper<any>) {
+    const destination = this.resolveDestination()
+
+    const parent = dirname(destination)
+    mkdirSync(parent, { recursive: true })
+
+    writeFileSync(destination, this.content)
+  }
+
+  resolveDestination(): string {
+    return join(activeDir, this.destination)
+  }
+
+  clone(): StringFiles {
+    return new StringFiles(this.content, this.destination)
+  }
+}
+
 export class Command extends Step {
   name: string
   command: string
@@ -282,7 +313,7 @@ export abstract class TemplateBase {
         task: async (_ctx: never, task: ListrTaskWrapper<any>) => {
           for (const plugin of plugins) {
             task.output = `${plugin.name}...`
-            plugin.apply(this)
+            await plugin.apply(this)
           }
         },
       },
