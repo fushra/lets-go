@@ -265,9 +265,11 @@ export abstract class TemplateBase {
   prePlugins() {}
 
   async apply(userPlugins: BasePlugin<TemplateBase>[]) {
-    const plugins = [...this.requiredPlugins, ...userPlugins].sort(
-      (a, b) => a.priority - b.priority
-    )
+    const plugins = genPlugins([...this.requiredPlugins, ...userPlugins])
+
+    for (const plugin of plugins) {
+      await plugin.requestUserChoices()
+    }
 
     const list = new Listr([
       {
@@ -278,7 +280,10 @@ export abstract class TemplateBase {
       {
         title: 'Apply plugins',
         task: async (_ctx: never, task: ListrTaskWrapper<any>) => {
-          await applyPlugins(plugins, task, this)
+          for (const plugin of plugins) {
+            task.output = `${plugin.name}...`
+            plugin.apply(this)
+          }
         },
       },
       {
@@ -303,19 +308,19 @@ export abstract class TemplateBase {
 
 const appliedPlugins: string[] = []
 
-async function applyPlugins(
-  plugins: BasePlugin<TemplateBase>[],
-  task: Listr.ListrTaskWrapper<any>,
-  parent: TemplateBase
-) {
+function genPlugins(
+  plugins: BasePlugin<TemplateBase>[]
+): BasePlugin<TemplateBase>[] {
+  const allPlugins = []
+
   for (const plugin of plugins
     .filter((p) => !appliedPlugins.includes(p.name))
     .sort((a, b) => a.priority - b.priority)) {
-    await applyPlugins(plugin.dependencies, task, parent)
-
-    task.output = `${plugin.name}...`
-    await plugin.apply(parent)
+    const deps = genPlugins(plugin.dependencies)
 
     appliedPlugins.push(plugin.name)
+    allPlugins.push(...deps, plugin)
   }
+
+  return allPlugins
 }

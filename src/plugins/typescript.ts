@@ -13,7 +13,6 @@ import {
 } from '../templates/base'
 import { CLIApp } from '../templates/cliApp'
 import { ExpressApp } from '../templates/expressApp'
-import { ReactApp } from '../templates/react'
 import { SharedCommonJSLibrary } from '../templates/sharedLibrary'
 
 import { BasePlugin } from './base'
