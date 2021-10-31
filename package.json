@@ -2,7 +2,6 @@
   "name": "lets-go",
   "version": "0.0.0",
   "description": "A CLI for creating javascript based web and nodejs applications",
-  "main": "index.js",
   "scripts": {
     "test": "jest",
     "build": "tsc -p ./tsconfig.json; rm -rf dist/templates/static/; mkdir -p dist/templates/static/;cp -R src/templates/static/* dist/templates/static/",
@@ -13,7 +12,7 @@
     "url": "git+https://github.com/fushra/lets-go.git"
   },
   "author": "",
-  "license": "MIT",
+  "license": "Unlicense",
   "bugs": {
     "url": "https://github.com/fushra/lets-go/issues"
   },
@@ -21,7 +20,6 @@
   "devDependencies": {
     "@types/jest": "^27.0.2",
     "@types/node": "^16.11.0",
-    "@types/node-fetch": "^2.6.5",
     "@types/prompts": "^2.0.14",
     "jest": "^27.2.5",
     "kleur": "^4.1.4",
