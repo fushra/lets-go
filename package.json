@@ -2,9 +2,10 @@
   "name": "lets-go",
   "version": "0.0.0",
   "description": "A CLI for creating javascript based web and nodejs applications",
+  "bin": "./dist/cli.js",
   "scripts": {
     "test": "jest",
-    "build": "tsc -p ./tsconfig.json; rm -rf dist/templates/static/; mkdir -p dist/templates/static/;cp -R src/templates/static/* dist/templates/static/",
+    "build": "tsc -p ./tsconfig.json; rm -rf dist/templates/static/; mkdir -p dist/templates/static/;cp -R src/templates/static/* dist/templates/static/; echo '#!/usr/bin/env node\n' >  tmpfile && cat ./dist/cli.js >> tmpfile && mv tmpfile ./dist/cli.js",
     "app": "ts-node src/cli.ts"
   },
   "repository": {
