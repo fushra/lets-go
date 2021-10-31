@@ -1,0 +1,9 @@
+testing/
+src/
+.vscode/
+.github/
+.prettierrc
+jest.config.js
+tsconfig.tsbuildinfo
+yarn-error.log
+yarn.lock
